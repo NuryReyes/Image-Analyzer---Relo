@@ -71,4 +71,37 @@ export class DataStore {
   setCurrentBoundingBox(boundingBox: BoundingBox) {
     this.currentBoundingBox = boundingBox;
   }
+
+  get enablePostAnotation(): boolean {
+    const isDataReady =
+      this.currentBoundingBox !== undefined &&
+      this.currentCategoryId !== undefined &&
+      this.currentImageId !== undefined;
+
+    return isDataReady;
+  }
+
+  get annotationPostBody(): PostBody | undefined {
+    if (this.enablePostAnotation) {
+      const body: PostBody = {
+        imageId: this.currentImageId!,
+        annotations: [
+          {
+            categoryId: this.currentCategoryId!,
+            boundingBoxes: [this.currentBoundingBox!],
+          },
+        ],
+      };
+      return body;
+    }
+  }
+
+  get annotationDiscardBody(): object | undefined {
+    if (this.currentImageId !== undefined) {
+      return {
+        imageId: this.currentImageId,
+        annotations: [],
+      };
+    }
+  }
 }
