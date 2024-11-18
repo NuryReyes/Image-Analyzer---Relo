@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useContext, useState } from "react";
 import { DataStoreContext } from "../context/dataStoreContext";
 import { observer } from "mobx-react-lite";
@@ -22,15 +21,15 @@ const ImageAnalyzer = observer(() => {
     }
   }
 
-  const extractPositionDelta = (event: any, initial?: boolean) => {
+  const extractPositionDelta = (event: React.PointerEvent<HTMLDivElement>, initial?: boolean) => {
     const point: Coordinate = {
       x: event.pageX,
       y: event.pageY
     };
 
     const offset: Coordinate = {
-      x: event.target.offsetLeft,
-      y: event.target.offsetTop
+      x: event.currentTarget.offsetLeft,
+      y: event.currentTarget.offsetTop
     }
     
     const delta = calculatePointDelta(offset, point);
@@ -41,10 +40,10 @@ const ImageAnalyzer = observer(() => {
     return delta;
   };
 
-  const onPointerDown = (event: any) => {
+  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (data?.currentImageId === undefined) return;
     setIsDragging(true);
-    event.target.setPointerCapture(event.pointerId);
+    event.currentTarget.setPointerCapture(event.pointerId);
 
     setInitialPoint(undefined);
     setCurrentPoint(undefined);
@@ -52,25 +51,29 @@ const ImageAnalyzer = observer(() => {
     extractPositionDelta(event, true);
   };
 
-  const onPointerMove = (event: any) => {
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!isDragging) return;
 
     const delta = extractPositionDelta(event);
     setCurrentPoint(delta);
   }
 
-  const onPointerUp = (event: any) => {
+  const onPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
     if (data?.currentImageId === undefined) return;
     setIsDragging(false);
     const delta = extractPositionDelta(event);
     setCurrentPoint(delta);
     data?.setCurrentBoundingBox({
-      topLeftX: initialPoint!.x,
-      topLeftY: initialPoint!.y,
+      topLeftX: isNegativeWidth() ?  currentPoint!.x : initialPoint!.x,
+      topLeftY: isNegativeHeight() ? currentPoint!.y : initialPoint!.y,
       width: Math.abs(currentPoint!.x - initialPoint!.x),
       height: Math.abs(currentPoint!.y - initialPoint!.y),
     });
   }
+
+  const isNegativeHeight = () => ((currentPoint?.y ?? 0) - (initialPoint?.y ?? 0)) < 0;
+
+  const isNegativeWidth = () => ((currentPoint?.x ?? 0) - (initialPoint?.x ?? 0)) < 0;
   
   return (
     <div 
@@ -91,8 +94,8 @@ const ImageAnalyzer = observer(() => {
           <div 
             className="annotation" 
             style={{
-              top: initialPoint.y,
-              left: initialPoint.x,
+              top: isNegativeHeight() ? currentPoint.y : initialPoint.y,
+              left: isNegativeWidth() ?  currentPoint.x : initialPoint.x,
               height: Math.abs(currentPoint.y - initialPoint.y),
               width: Math.abs(currentPoint.x - initialPoint.x),
             }}
